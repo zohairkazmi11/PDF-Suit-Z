@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "hono": "latest",
+    "postgres": "^3.4.9"
+  },
+  "type": "module"
+}
