@@ -1,7 +1,13 @@
 {
+  "name": "pdf-suit-z",
+  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "hono": "latest",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "@hono/node-server": "latest"
   },
-  "type": "module"
+  "scripts": {
+    "start": "node index.js"
+  }
 }
