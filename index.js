@@ -5,7 +5,7 @@ import postgres from "postgres";
 
 const app = new Hono();
 
-// Connect to your external free Postgres database (Neon / Supabase)
+// Connect to your external Postgres database
 const connectionString = process.env.DATABASE_URL || "postgres://username:password@localhost:5432/database";
 const sql = postgres(connectionString);
 
@@ -40,45 +40,61 @@ app.get("/", authMiddleware, async (c) => {
   `;
 
   let docListHtml = userDocs.length === 0 
-    ? `<li class="doc-item" style="color: #94a3b8; pointer-events: none;">No documents uploaded yet.</li>`
+    ? `<div class="p-4 text-gray-400 text-sm italic">No documents uploaded yet.</div>`
     : userDocs.map((doc, i) => `
-        <li class="doc-item ${i === 0 ? 'active' : ''}" onclick="window.location.href='/?file=${encodeURIComponent(doc.file_url)}'">
-          ${doc.file_name}
-        </li>`).join("");
+        <div class="p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-400 transition shadow-sm" 
+             onclick="window.location.href='/?file=${encodeURIComponent(doc.file_url)}'">
+          <div class="font-medium text-gray-700">${doc.file_name}</div>
+        </div>`).join("");
 
   return c.html(`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
+      <meta charset="UTF-8">
       <title>PDF Viewer Suite</title>
-      <style>
-        body { font-family: sans-serif; background: #f5f7fb; display: flex; height: 100vh; margin: 0; }
-        .sidebar { width: 280px; background: #fff; border-right: 1px solid #e2e8f0; padding: 20px; }
-        .doc-item { padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; margin-bottom: 8px; cursor: pointer; border-radius: 6px; }
-      </style>
+      <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body>
-      <div class="sidebar">
-        <h1>PDF Suite</h1>
-        <p>${user.name}</p>
-        <a href="/logout">Sign Out</a>
-        <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
-          <input type="file" name="pdf" onchange="document.getElementById('uploadForm').submit();" />
+    <body class="bg-gray-50 flex h-screen">
+      <aside class="w-72 bg-white border-r border-gray-200 p-6 flex flex-col">
+        <h1 class="text-xl font-bold text-indigo-600 mb-6">PDF Suite</h1>
+        <div class="mb-6">
+          <p class="text-sm text-gray-500">Welcome back,</p>
+          <p class="font-semibold text-gray-800">${user.name}</p>
+        </div>
+        <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm" class="mb-6">
+          <label class="block w-full bg-indigo-500 text-white py-2 px-4 rounded-lg cursor-pointer text-center hover:bg-indigo-600 transition">
+            Upload PDF
+            <input type="file" name="pdf" class="hidden" onchange="document.getElementById('uploadForm').submit();" />
+          </label>
         </form>
-        <ul>${docListHtml}</ul>
-      </div>
+        <div class="flex-grow space-y-3 overflow-y-auto">
+          ${docListHtml}
+        </div>
+        <a href="/logout" class="text-red-500 text-sm hover:underline mt-auto">Sign Out</a>
+      </aside>
+      <main class="flex-1 p-8 bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center">
+        <div class="text-gray-400">Select a document to view</div>
+      </main>
     </body>
     </html>
   `);
 });
 
-// Auth Routes (Login/Signup)
+// Auth Routes
 app.get("/login", (c) => c.html(`
-  <form action="/login" method="POST">
-    <input type="email" name="email" required placeholder="Email" />
-    <input type="password" name="password" required placeholder="Password" />
-    <button type="submit">Sign In</button>
-  </form>
+  <!DOCTYPE html>
+  <html>
+    <head><script src="https://cdn.tailwindcss.com"></script></head>
+    <body class="bg-gradient-to-br from-purple-500 to-indigo-600 h-screen flex justify-center items-center">
+      <form action="/login" method="POST" class="bg-white p-8 rounded-xl shadow-2xl w-96 space-y-4">
+        <h2 class="text-2xl font-bold text-gray-800 text-center">Login</h2>
+        <input type="email" name="email" required placeholder="Email" class="w-full p-3 border rounded-lg" />
+        <input type="password" name="password" required placeholder="Password" class="w-full p-3 border rounded-lg" />
+        <button type="submit" class="w-full bg-indigo-500 text-white p-3 rounded-lg">Sign In</button>
+      </form>
+    </body>
+  </html>
 `));
 
 app.post("/login", async (c) => {
@@ -103,12 +119,8 @@ app.post("/upload", authMiddleware, async (c) => {
   return c.redirect("/");
 });
 
-// THIS IS THE PART YOU WERE MISSING
+// Server Initialization
 const port = parseInt(process.env.PORT || "3000");
-console.log(`Server running on port ${port}`);
-
-serve({
-  fetch: app.fetch,
-  port: port,
-  hostname: '0.0.0.0'
+serve({ fetch: app.fetch, port: port, hostname: '0.0.0.0' }, () => {
+  console.log(`Server running on port ${port}`);
 });
