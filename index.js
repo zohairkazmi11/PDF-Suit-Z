@@ -124,3 +124,36 @@ const port = parseInt(process.env.PORT || "3000");
 serve({ fetch: app.fetch, port: port, hostname: '0.0.0.0' }, () => {
   console.log(`Server running on port ${port}`);
 });
+// Show the Signup Page
+app.get("/signup", (c) => c.html(`
+  <!DOCTYPE html>
+  <html>
+    <head><script src="https://cdn.tailwindcss.com"></script></head>
+    <body class="bg-gradient-to-br from-purple-500 to-indigo-600 h-screen flex justify-center items-center">
+      <form action="/signup" method="POST" class="bg-white p-8 rounded-xl shadow-2xl w-96 space-y-4">
+        <h2 class="text-2xl font-bold text-gray-800 text-center">Create Account</h2>
+        <input type="text" name="name" required placeholder="Full Name" class="w-full p-3 border rounded-lg" />
+        <input type="email" name="email" required placeholder="Email" class="w-full p-3 border rounded-lg" />
+        <input type="password" name="password" required placeholder="Password" class="w-full p-3 border rounded-lg" />
+        <button type="submit" class="w-full bg-indigo-500 text-white p-3 rounded-lg">Register</button>
+        <p class="text-center text-sm">Already have an account? <a href="/login" class="text-indigo-500">Sign In</a></p>
+      </form>
+    </body>
+  </html>
+`));
+
+// Handle the Signup Logic
+app.post("/signup", async (c) => {
+  const { name, email, password } = await c.req.parseBody();
+  
+  // Check if user already exists
+  const existingUser = await sql`SELECT id FROM users WHERE email = ${email}`;
+  if (existingUser.length > 0) {
+    return c.text("User already exists", 400);
+  }
+
+  // Add user to database
+  await sql`INSERT INTO users (name, email, password) VALUES (${name}, ${email}, ${password})`;
+  
+  return c.redirect("/login");
+});
